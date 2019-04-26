@@ -1,19 +1,20 @@
 
 # coding: utf-8
 
-# In[2]:
+# In[1]:
 
 
 import matplotlib.pyplot as plt
 
 
-# In[47]:
+# In[24]:
 
 
 import csv, cv2
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
+import random
 
 lines = []
 with open('./examples/driving_log.csv') as csvfile:
@@ -25,6 +26,54 @@ with open('./examples/driving_log.csv') as csvfile:
 train_samples, validation_samples = train_test_split(lines, test_size=0.2)
     
 def generator(samples, batch_size=32):
+    num_samples = len(samples)
+    while True:
+        shuffle(samples)
+        for offset in range(0, num_samples, batch_size):
+            batch_samples = samples[offset:offset+batch_size]
+            
+            steering_off = 0
+            images = []
+            measurements = []
+            
+            for batch_sample in batch_samples:
+                # randomly three steerting off choices
+                #choice = random.randint(0,2)
+                source_path = batch_sample[0]
+                filename = source_path.split("/")[-1]
+                current_path = './examples/IMG/' + filename
+                image = cv2.imread(current_path)
+                
+                
+                ## generate steering off value
+                #if choice == 0:
+                #    steering_off = 0
+                #elif choice == 1:
+                #    steering_off = 0.2
+                #else:
+                #    steering_off = -0.2
+                
+                measurement = float(batch_sample[3]) + steering_off
+                
+                # randomly choose if use augmentation
+                aug_choice = random.randint(0,1)
+                
+                if aug_choice == 0:
+                    images.append(image)    
+                    measurements.append(measurement)
+                else:
+                    images.append(np.fliplr(image))
+                    measurements.append(-measurement)
+                
+            X_train = np.array(images)
+            y_train = np.array(measurements)
+            yield shuffle(X_train, y_train)
+
+
+# In[21]:
+
+
+def generator_o(samples, batch_size=32):
     num_samples = len(samples)
     while True:
         shuffle(samples)
@@ -59,7 +108,7 @@ def generator(samples, batch_size=32):
             yield shuffle(X_train, y_train)
 
 
-# In[48]:
+# In[25]:
 
 
 batch_size = 64
@@ -67,7 +116,7 @@ train_generator = generator(train_samples, batch_size)
 validation_generator = generator(validation_samples, batch_size)
 
 
-# In[49]:
+# In[27]:
 
 
 from keras.models import Sequential
@@ -90,7 +139,7 @@ model.add(Dense(10))
 model.add(Dense(1))
 
 model.compile(loss='mse', optimizer='adam')
-model.fit_generator(train_generator,             steps_per_epoch=math.ceil(len(train_samples)/batch_size),             validation_data=validation_generator,             validation_steps=math.ceil(len(validation_samples)/batch_size),             epochs=5, verbose=1)
+model.fit_generator(train_generator,             steps_per_epoch=math.ceil(len(train_samples)/batch_size),             validation_data=validation_generator,             validation_steps=math.ceil(len(validation_samples)/batch_size),             epochs=8, verbose=1)
 model.save('model.h5')
 
 
