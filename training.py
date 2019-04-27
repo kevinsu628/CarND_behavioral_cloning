@@ -140,20 +140,18 @@ model.add(Dense(50))
 model.add(Dense(10))
 model.add(Dense(1))
 
+epoch = 15
 model.compile(loss='mse', optimizer='adam')
-model.fit_generator(train_generator,             steps_per_epoch=math.ceil(len(train_samples)/batch_size),             validation_data=validation_generator,             validation_steps=math.ceil(len(validation_samples)/batch_size),             epochs=15, verbose=1)
+history_object = model.fit_generator(train_generator,             steps_per_epoch=math.ceil(len(train_samples)/batch_size),             validation_data=validation_generator,             validation_steps=math.ceil(len(validation_samples)/batch_size),             epochs=epoch, verbose=1)
 model.save('model.h5')
 
 
 # In[50]:
 
-
-print(model.history.keys())
-plt.plot(model.history['loss'])
-plt.plot(model.history['val_loss'])
+plt.plot(history_object.history['loss'])
+plt.plot(history_object.history['val_loss'])
 plt.title('model mean squared error loss')
 plt.ylabel('mean squared error loss')
 plt.xlabel('epoch')
 plt.legend(['training set', 'validation set'], loc='upper right')
-plt.show()
-
+plt.savefig('loss.png')
