@@ -15,6 +15,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 import random
+from PIL import Image
 
 lines = []
 with open('./examples/driving_log.csv') as csvfile:
@@ -38,20 +39,21 @@ def generator(samples, batch_size=32):
             
             for batch_sample in batch_samples:
                 # randomly three steerting off choices
-                #choice = random.randint(0,2)
-                source_path = batch_sample[0]
+                choice = random.randint(0,2)
+                source_path = batch_sample[choice]
                 filename = source_path.split("/")[-1]
                 current_path = './examples/IMG/' + filename
-                image = cv2.imread(current_path)
-                
+                #image = cv2.imread(current_path)
+                image = Image.open(current_path).convert('RGB')
+                image = np.asarray(image)
                 
                 ## generate steering off value
-                #if choice == 0:
-                #    steering_off = 0
-                #elif choice == 1:
-                #    steering_off = 0.2
-                #else:
-                #    steering_off = -0.2
+                if choice == 0:
+                    steering_off = 0
+                elif choice == 1:
+                    steering_off = 0.1
+                else:
+                    steering_off = -0.1
                 
                 measurement = float(batch_sample[3]) + steering_off
                 
@@ -139,16 +141,16 @@ model.add(Dense(10))
 model.add(Dense(1))
 
 model.compile(loss='mse', optimizer='adam')
-model.fit_generator(train_generator,             steps_per_epoch=math.ceil(len(train_samples)/batch_size),             validation_data=validation_generator,             validation_steps=math.ceil(len(validation_samples)/batch_size),             epochs=8, verbose=1)
+model.fit_generator(train_generator,             steps_per_epoch=math.ceil(len(train_samples)/batch_size),             validation_data=validation_generator,             validation_steps=math.ceil(len(validation_samples)/batch_size),             epochs=15, verbose=1)
 model.save('model.h5')
 
 
 # In[50]:
 
 
-print(model.history.history.keys())
-plt.plot(model.history.history['loss'])
-plt.plot(model.history.history['val_loss'])
+print(model.history.keys())
+plt.plot(model.history['loss'])
+plt.plot(model.history['val_loss'])
 plt.title('model mean squared error loss')
 plt.ylabel('mean squared error loss')
 plt.xlabel('epoch')
